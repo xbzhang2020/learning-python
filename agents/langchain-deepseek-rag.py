@@ -28,7 +28,7 @@ vector_store = InMemoryVectorStore(embedding=embeddings_model)
 vector_store.add_documents(chunks)
 
 # 向量检索
-query = "什么是黑神话：悟空？"
+query = input("请输入问题：")
 similar_docs = vector_store.similarity_search(query, k=3)
 similar_docs_text = "\n".join([doc.page_content for doc in similar_docs])
 
@@ -55,7 +55,12 @@ template = ChatPromptTemplate(
         ("human", "{query}"),
     ]
 )
+
 prompt = template.format(query=query, context=similar_docs_text)
 
-response = model.invoke(prompt)
-print(response.content)
+# response = model.invoke(prompt)
+# print(response.content)
+
+for chunk in model.stream(prompt):
+    print(chunk.text, end="")
+print("")
