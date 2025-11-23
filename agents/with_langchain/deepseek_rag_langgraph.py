@@ -2,10 +2,12 @@ from langchain_deepseek import ChatDeepSeek
 from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage
 from dotenv import load_dotenv
 from typing_extensions import TypedDict, Annotated
+from typing import List
 import os
 import operator
-from verctor_chroma import vector_store
+from verctor_chroma import chroma_wukong_db
 from langgraph.graph import StateGraph, START, END
+from langchain_core.documents import Document
 
 load_dotenv()
 model = ChatDeepSeek(
@@ -16,21 +18,19 @@ model = ChatDeepSeek(
 
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
-    context: str
+    context: List[Document]
 
 
 def retrieve(state: State):
     """Create the index and retrieve the context"""
     query = state["messages"][-1].content
-    similar_docs = vector_store.similarity_search(query=query, k=3)
-    similar_docs_text = "\n".join([doc.page_content for doc in similar_docs])
-
-    return {"context": similar_docs_text}
+    similar_docs = chroma_wukong_db.similarity_search(query=query, k=3)
+    return {"context": similar_docs}
 
 
 def generate(state: State):
     """Generate the response"""
-    context = state["context"]
+    context = "\n".join([doc.page_content for doc in state["context"]])
     messages = [
         SystemMessage(
             content=f"你是一名游戏《黑神话：悟空》的专家，请根据以下文档回答用户的问题。如果用户的问题不在文档中，请回答“我不知道”。\n上下文：{context}"
