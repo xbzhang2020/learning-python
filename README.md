@@ -17,11 +17,8 @@ https://docs.langchain.com/oss/python/langchain/overview
 https://reference.langchain.com/python/integrations/langchain_deepseek/
 https://docs.langchain.com/oss/python/integrations/splitters
 https://docs.langchain.com/oss/python/integrations/document_loaders
-https://docs.langchain.com/oss/python/integrations/text_embedding
-https://docs.langchain.com/oss/python/integrations/providers/huggingface#hugging-face
+https://docs.langchain.com/oss/python/integrations/text_embedding/huggingfacehub
 https://docs.langchain.com/oss/python/integrations/vectorstores
+https://reference.langchain.com/python/langchain_core/prompts/
 
-疑问：为啥 agent 和 model 的用法不一样？
-
-langchian、langgraph、langsmith、langchain-community 区别是什么？
 
