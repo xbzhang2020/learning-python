@@ -4,12 +4,10 @@ from dotenv import load_dotenv
 from typing_extensions import TypedDict, Annotated
 import os
 import operator
-from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-from langchain_chroma import Chroma
+from verctor_chroma import vector_store
 from langgraph.graph import StateGraph, START, END
 
 load_dotenv()
-
 model = ChatDeepSeek(
     model="deepseek-chat",
     api_key=os.getenv("DEEPSEEK_API_KEY"),
@@ -23,16 +21,6 @@ class State(TypedDict):
 
 def retrieve(state: State):
     """Create the index and retrieve the context"""
-    embeddings_model = HuggingFaceEmbeddings(
-        model_name="BAAI/bge-small-zh-v1.5",
-        model_kwargs={"device": "cpu"},
-        encode_kwargs={"normalize_embeddings": True},
-    )
-    vector_store = Chroma(
-        embedding_function=embeddings_model, persist_directory="chroma_wukong_db"
-    )
-
-    # 向量检索
     query = state["messages"][-1].content
     similar_docs = vector_store.similarity_search(query=query, k=3)
     similar_docs_text = "\n".join([doc.page_content for doc in similar_docs])
