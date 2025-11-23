@@ -4,10 +4,8 @@ from dotenv import load_dotenv
 from typing_extensions import TypedDict, Annotated
 import os
 import operator
-from langchain_community.document_loaders import WebBaseLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
-from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_chroma import Chroma
 from langgraph.graph import StateGraph, START, END
 
 load_dotenv()
@@ -17,6 +15,7 @@ model = ChatDeepSeek(
     api_key=os.getenv("DEEPSEEK_API_KEY"),
 )
 
+
 class State(TypedDict):
     messages: Annotated[list[AnyMessage], operator.add]
     context: str
@@ -24,28 +23,14 @@ class State(TypedDict):
 
 def retrieve(state: State):
     """Create the index and retrieve the context"""
-
-    # 加载文档
-    loader = WebBaseLoader(
-        web_path="https://zh.wikipedia.org/wiki/%E9%BB%91%E7%A5%9E%E8%AF%9D%EF%BC%9A%E6%82%9F%E7%A9%BA"
-    )
-    docs = loader.load()
-
-    # 文档切片
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200,
-    )
-    chunks = text_splitter.split_documents(docs)
-
-    # 文档嵌入与向量存储
     embeddings_model = HuggingFaceEmbeddings(
         model_name="BAAI/bge-small-zh-v1.5",
         model_kwargs={"device": "cpu"},
         encode_kwargs={"normalize_embeddings": True},
     )
-    vector_store = InMemoryVectorStore(embedding=embeddings_model)
-    vector_store.add_documents(chunks)
+    vector_store = Chroma(
+        embedding_function=embeddings_model, persist_directory="chroma_wukong_db"
+    )
 
     # 向量检索
     query = state["messages"][-1].content
@@ -53,6 +38,7 @@ def retrieve(state: State):
     similar_docs_text = "\n".join([doc.page_content for doc in similar_docs])
 
     return {"context": similar_docs_text}
+
 
 def generate(state: State):
     """Generate the response"""
@@ -64,6 +50,7 @@ def generate(state: State):
     ] + state["messages"]
     response = model.invoke(messages)
     return {"messages": [response]}
+
 
 # 构建工作流
 agent_builder = StateGraph(State)

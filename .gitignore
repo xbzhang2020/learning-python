@@ -206,7 +206,5 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-
-bge-small-en-v1.5/
-bge-small-zh-v1.5/
 storage/
+chroma_wukong_db/
