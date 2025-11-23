@@ -1,0 +1,72 @@
+from langchain_deepseek import ChatDeepSeek
+from langchain_core.messages import AnyMessage, HumanMessage, SystemMessage
+from dotenv import load_dotenv
+from typing_extensions import TypedDict, Annotated
+from typing import List
+import os
+import operator
+from verctor_chroma import chroma_wukong_db
+from langgraph.graph import StateGraph, START, END
+from langchain_core.documents import Document
+
+load_dotenv()
+model = ChatDeepSeek(
+    model="deepseek-chat",
+    api_key=os.getenv("DEEPSEEK_API_KEY"),
+)
+
+
+class State(TypedDict):
+    messages: Annotated[list[AnyMessage], operator.add]
+    context: List[Document]
+
+
+def retrieve(state: State):
+    """Create the index and retrieve the context"""
+    query = state["messages"][-1].content
+    similar_docs = chroma_wukong_db.similarity_search(query=query, k=3)
+    return {"context": similar_docs}
+
+
+def generate(state: State):
+    """Generate the response"""
+    context = "\n".join([doc.page_content for doc in state["context"]])
+    messages = [
+        SystemMessage(
+            content=f"你是一名游戏《黑神话：悟空》的专家，请根据以下文档回答用户的问题。如果用户的问题不在文档中，请回答“我不知道”。\n上下文：{context}"
+        ),
+    ] + state["messages"]
+    response = model.invoke(messages)
+    return {"messages": [response]}
+
+
+# 构建工作流
+agent_builder = StateGraph(State)
+agent_builder.add_node("retrieve", retrieve)
+agent_builder.add_node("generate", generate)
+agent_builder.add_edge(START, "retrieve")
+agent_builder.add_edge("retrieve", "generate")
+agent_builder.add_edge("generate", END)
+
+# 编译工作流
+agent = agent_builder.compile()
+
+# 可视化工作流
+# image_data = agent.get_graph(xray=True).draw_mermaid_png()
+# with open("./agent.png", "wb") as f:
+#     f.write(image_data)
+
+messages = []
+
+def loop():
+    while True:
+        query = input("请输入问题：")
+        if query == "exit" or query == "quit":
+            break
+        messages.append(HumanMessage(content=query))
+        result = agent.invoke({"messages": messages})
+        last_message = result["messages"][-1]
+        last_message.pretty_print()
+        messages.append(last_message)
+
+loop()
