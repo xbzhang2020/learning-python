@@ -53,7 +53,7 @@ agent = agent_builder.compile()
 
 # 可视化工作流
 # image_data = agent.get_graph(xray=True).draw_mermaid_png()
-# with open("agent.png", "wb") as f:
+# with open("./agent.png", "wb") as f:
 #     f.write(image_data)
 
 # 执行工作流
