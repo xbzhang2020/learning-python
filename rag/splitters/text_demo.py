@@ -4,7 +4,7 @@ from langchain_text_splitters import CharacterTextSplitter
 loader = TextLoader("data/shanxi/云冈石窟.txt")
 docs = loader.load()
 
-text_splitters = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+text_splitters = CharacterTextSplitter(chunk_size=100, chunk_overlap=20)
 chunks = text_splitters.split_documents(docs)
 
 for chunk in chunks:
